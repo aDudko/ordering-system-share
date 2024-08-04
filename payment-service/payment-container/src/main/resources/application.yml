@@ -1,0 +1,71 @@
+server:
+  port: 8182
+
+logging:
+  level:
+    com.ordering.system: DEBUG
+
+payment-service:
+  payment-request-topic-name: payment-request
+  payment-response-topic-name: payment-response
+  outbox-scheduler-fixed-rate: 10000
+  outbox-scheduler-initial-delay: 10000
+
+spring:
+  jpa:
+    open-in-view: false
+    show-sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=payment&binaryTransfer=true&reWriteBatchedInserts=true&stringtype=unspecified
+    username: *
+    password: *
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
+      platform: postgres
+      schema-locations: classpath:init-schema.sql
+      data-locations: classpath:init-data.sql
+
+kafka-config:
+  bootstrap-servers: localhost:19092, localhost:29092, localhost:39092
+  schema-registry-url-key: schema.registry.url
+  schema-registry-url: http://localhost:8081
+  num-of-partitions: 3
+  replication-factor: 3
+
+kafka-producer-config:
+  key-serializer-class: org.apache.kafka.common.serialization.StringSerializer  # key serializer class as string serializer
+  value-serializer-class: io.confluent.kafka.serializers.KafkaAvroSerializer    # value serializer use avro from Confluent lib
+  compression-type: snappy      # gives a good balance of CPU usage, compression ratio, speed, and network utilization
+  acks: all                     # will wait acknowledgement from each broker, before confirming the produce operation
+  batch-size: 16384             # you can increase the batch-size, so you can increase the throughput on the producer side
+  batch-size-boost-factor: 100  # will be used to send the data in batches from producer to kafka brokers
+  linger-ms: 5                  # add a delay on producer, before sending the data
+  request-timeout-ms: 60000
+  retry-count: 5                # it'll retry five times in case of error on the producer
+
+kafka-consumer-config:
+  key-deserializer: org.apache.kafka.common.serialization.StringDeserializer  # key serializer class as string deserializer
+  value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer    # value deserializer use avro from Confluent lib
+  # This property ensures that a Kafka consumer doesn't start from beginning each time while consuming a Kafka topic
+  payment-consumer-group-id: payment-topic-consumer
+  auto-offset-reset: earliest
+  specific-avro-reader-key: specific.avro.reader  # specific property
+  specific-avro-reader: true                      # specific property
+  batch-listener: true            # allows to consume the data in batches instead of consuming them one by one
+  auto-startup: true              # the kafka listener will start automatically
+  concurrency-level: 3            # it is required for maximum concurrency and higher throughput
+  # if broker doesn't get a signal in this timeout interval it'll mark the consumer as dead,
+  # and it will remove it from the consumer group
+  session-timeout-ms: 10000
+  heartbeat-interval-ms: 3000
+  max-poll-interval-ms: 300000
+  max-poll-records: 500
+  max-partition-fetch-bytes-default: 1048576
+  max-partition-fetch-bytes-boost-factor: 1   # 1Mb
+  poll-timeout-ms: 150

@@ -1,0 +1,13 @@
+package com.ordering.system.order.service.dataaccess.outbox.payment.exception;
+
+public class PaymentOutboxNotFoundException extends RuntimeException {
+
+    public PaymentOutboxNotFoundException(String message) {
+        super(message);
+    }
+
+    public PaymentOutboxNotFoundException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+}
